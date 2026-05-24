@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RSA Algorithm — Alice & Bob</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a26;--border:#2a2a3e;
+  --accent:#7c6af7;--accent2:#3ecfb0;--accent3:#f7a26a;
+  --text:#e8e6ff;--muted:#7a7898;--danger:#f76a6a;
+  --mono:'Space Mono',monospace;--display:'Syne',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--display);min-height:100vh;padding:2rem 1rem 4rem}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,106,247,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(124,106,247,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.container{max-width:900px;margin:0 auto;position:relative;z-index:1}
+header{text-align:center;margin-bottom:3rem}
+.tag{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--accent);border:1px solid rgba(124,106,247,.3);padding:4px 12px;border-radius:2px;margin-bottom:1rem;text-transform:uppercase}
+h1{font-size:clamp(2rem,6vw,3.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.1;background:linear-gradient(135deg,#fff 30%,var(--accent) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.5rem}
+.subtitle{color:var(--muted);font-size:13px;font-family:var(--mono)}
+.section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.75rem;margin-bottom:1.25rem;position:relative;overflow:hidden;transition:border-color .3s}
+.section:hover{border-color:rgba(124,106,247,.3)}
+.section::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:2px;background:var(--accent);border-radius:0 2px 2px 0;opacity:0;transition:opacity .3s}
+.section.active::before{opacity:1}
+.section.done::before{background:var(--accent2);opacity:1}
+.section-header{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem}
+.step-badge{width:28px;height:28px;border-radius:6px;background:rgba(124,106,247,.15);border:1px solid rgba(124,106,247,.3);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;color:var(--accent);flex-shrink:0}
+.step-badge.done{background:rgba(62,207,176,.12);border-color:rgba(62,207,176,.3);color:var(--accent2)}
+.section-title{font-size:16px;font-weight:600;color:var(--text);letter-spacing:-.01em}
+.section-desc{font-size:12px;color:var(--muted);font-family:var(--mono);margin-left:auto}
+.input-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:11px;font-family:var(--mono);color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.field input,.field textarea{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s;width:100%}
+.field input:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,106,247,.12)}
+.field input.error{border-color:var(--danger)}
+.field input.ok{border-color:var(--accent2)}
+.field textarea{resize:none;min-height:72px;line-height:1.6}
+.error-msg{font-size:11px;font-family:var(--mono);color:var(--danger);display:none}
+.error-msg.show{display:block}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:6px;font-family:var(--display);font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;letter-spacing:.01em}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#6a58e0;transform:translateY(-1px)}
+.btn-secondary{background:transparent;color:var(--accent2);border:1px solid rgba(62,207,176,.3)}
+.btn-secondary:hover{background:rgba(62,207,176,.08)}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);font-size:12px}
+.btn-ghost:hover{border-color:var(--danger);color:var(--danger)}
+.btn-row{display:flex;gap:10px;margin-top:1.25rem;flex-wrap:wrap;align-items:center}
+.key-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.key-card{background:var(--surface2);border-radius:8px;padding:14px 16px;border:1px solid var(--border)}
+.key-card.public{border-color:rgba(124,106,247,.3)}
+.key-card.private{border-color:rgba(247,162,106,.3)}
+.key-label{font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.15em;margin-bottom:8px}
+.key-card.public .key-label{color:var(--accent)}
+.key-card.private .key-label{color:var(--accent3)}
+.key-value{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--text)}
+.key-hint{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:4px}
+.kv-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px}
+.kv-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.kv-table tr:last-child td{border-bottom:none}
+.kv-table .lbl{color:var(--muted);font-size:11px;width:180px}
+.kv-table .eq{color:var(--accent);width:24px;text-align:center}
+.kv-table .val{color:var(--text);font-weight:700}
+.kv-table .sub{color:var(--muted);font-size:11px}
+.divider{display:flex;align-items:center;gap:12px;margin:1.25rem 0}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.divider span{font-size:11px;font-family:var(--mono);color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.hidden{display:none}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp .35s ease both}
+@keyframes popIn{from{opacity:0;transform:scale(.85) translateY(4px)}to{opacity:1;transform:scale(1) translateY(0)}}
+
+/* Process table — the main new feature */
+.proc-table-wrap{overflow-x:auto;margin-top:12px}
+.proc-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;min-width:560px}
+.proc-table th{padding:8px 12px;text-align:left;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);font-weight:400;white-space:nowrap}
+.proc-table td{padding:9px 12px;border-bottom:1px solid rgba(42,42,62,.6);vertical-align:middle}
+.proc-table tr:last-child td{border-bottom:none}
+.proc-table tr{animation:fadeUp .3s ease both}
+.ch-bubble{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;font-size:15px;font-weight:700;background:rgba(124,106,247,.12);border:1px solid rgba(124,106,247,.25);color:var(--text)}
+.num-val{color:var(--accent2)}
+.cipher-val{color:var(--accent3)}
+.formula-cell{color:var(--muted);font-size:11px}
+.arrow-cell{color:var(--muted);font-size:16px;text-align:center;width:28px}
+.result-val{font-weight:700;font-size:14px}
+.enc-result{color:var(--accent3)}
+.dec-result{color:var(--accent2)}
+
+/* Flow diagram */
+.flow-diagram{display:flex;align-items:center;gap:0;margin:16px 0;flex-wrap:wrap;gap:8px}
+.flow-node{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;text-align:center;flex:1;min-width:110px}
+.flow-node .fn-label{font-size:10px;font-family:var(--mono);color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+.flow-node .fn-val{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--text);word-break:break-all}
+.flow-node.enc{border-color:rgba(247,162,106,.35);background:rgba(247,162,106,.06)}
+.flow-node.dec{border-color:rgba(62,207,176,.35);background:rgba(62,207,176,.06)}
+.flow-node.key-pub{border-color:rgba(124,106,247,.35);background:rgba(124,106,247,.06)}
+.flow-node.key-priv{border-color:rgba(247,162,106,.35);background:rgba(247,162,106,.06)}
+.flow-arrow{font-size:18px;color:var(--muted);align-self:center;flex-shrink:0}
+
+/* Verify box */
+.verify-box{border-radius:10px;padding:1.25rem 1.5rem;border:1px solid;margin-top:1.25rem;text-align:center}
+.verify-box.ok{background:rgba(62,207,176,.07);border-color:rgba(62,207,176,.3)}
+.verify-box.fail{background:rgba(247,106,106,.07);border-color:rgba(247,106,106,.3)}
+.verify-label{font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.15em;margin-bottom:8px}
+.verify-box.ok .verify-label{color:var(--accent2)}
+.verify-box.fail .verify-label{color:var(--danger)}
+.verify-text{font-size:22px;font-weight:800;letter-spacing:-.01em}
+
+.pill{display:inline-block;font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:3px;text-transform:uppercase;letter-spacing:.1em;margin-left:6px}
+.pill-pub{background:rgba(124,106,247,.15);color:var(--accent)}
+.pill-priv{background:rgba(247,162,106,.15);color:var(--accent3)}
+
+@media(max-width:540px){.input-grid,.key-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <div class="tag">23ETCS002025 (B.JAGADISH)</div>
+  <h1>RSA Algorithm</h1>
+  <p class="subtitle">Alice &amp; Bob secure communication</p>
+</header>
+
+<!-- STEP 1: Key Generation -->
+<div class="section active" id="sec-keygen">
+  <div class="section-header">
+    <div class="step-badge" id="badge-1">01</div>
+    <span class="section-title">Key Generation</span>
+    <span class="section-desc">Choose two primes</span>
+  </div>
+  <div class="input-grid">
+    <div class="field">
+      <label>First prime — p</label>
+      <input type="number" id="inp-p" placeholder="e.g. 61" min="2">
+      <span class="error-msg" id="err-p">Must be a prime number</span>
+    </div>
+    <div class="field">
+      <label>Second prime — q</label>
+      <input type="number" id="inp-q" placeholder="e.g. 53" min="2">
+      <span class="error-msg" id="err-q">Must be prime and ≠ p</span>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="generateKeys()">Generate Keys →</button>
+    <button class="btn btn-ghost" onclick="resetAll()">Reset</button>
+  </div>
+</div>
+
+<!-- Key Results -->
+<div class="section hidden fade-up" id="sec-keyresult">
+  <div class="section-header">
+    <div class="step-badge done">✓</div>
+    <span class="section-title">Keys generated</span>
+  </div>
+  <table class="kv-table" id="key-steps"></table>
+  <div class="divider"><span>Key pair</span></div>
+  <div class="key-grid">
+    <div class="key-card public">
+      <div class="key-label">🔓 Public key (e, n)</div>
+      <div class="key-value" id="pub-key">—</div>
+      <div class="key-hint">Share with everyone</div>
+    </div>
+    <div class="key-card private">
+      <div class="key-label">🔐 Private key (d, n)</div>
+      <div class="key-value" id="priv-key">—</div>
+      <div class="key-hint">Keep this secret</div>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 2: Encryption -->
+<div class="section hidden fade-up" id="sec-enc">
+  <div class="section-header">
+    <div class="step-badge" id="badge-2">02</div>
+    <span class="section-title">Encryption</span>
+    <span class="section-desc">Alice → Bob</span>
+  </div>
+  <div class="field">
+    <label>Plaintext message</label>
+    <textarea id="inp-msg" placeholder="Type Alice's message…" rows="2"></textarea>
+  </div>
+  <div style="margin-top:10px;font-family:var(--mono);font-size:12px;color:var(--muted)">
+    Formula: <span style="color:var(--accent3)">C = M<sup>e</sup> mod n</span>
+    <span class="pill pill-pub">uses public key</span>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="encrypt()">Encrypt →</button>
+  </div>
+</div>
+
+<!-- Encryption Process -->
+<div class="section hidden fade-up" id="sec-encresult">
+  <div class="section-header">
+    <div class="step-badge done">✓</div>
+    <span class="section-title">Encryption process</span>
+    <span class="section-desc">C = M<sup>e</sup> mod n</span>
+  </div>
+
+  <!-- Flow summary -->
+  <div class="flow-diagram" id="enc-flow"></div>
+
+  <div class="divider"><span>Step-by-step</span></div>
+
+  <!-- Process table -->
+  <div class="proc-table-wrap">
+    <table class="proc-table">
+      <thead>
+        <tr>
+          <th>Char</th>
+          <th>ASCII (M)</th>
+          <th style="text-align:center">→</th>
+          <th>Formula</th>
+          <th style="text-align:center">→</th>
+          <th>Ciphertext (C)</th>
+        </tr>
+      </thead>
+      <tbody id="enc-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="divider"><span>Ciphertext array</span></div>
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-family:var(--mono);font-size:12px;color:var(--accent3);word-break:break-all" id="enc-raw"></div>
+</div>
+
+<!-- STEP 3: Decryption -->
+<div class="section hidden fade-up" id="sec-dec">
+  <div class="section-header">
+    <div class="step-badge" id="badge-3">03</div>
+    <span class="section-title">Decryption</span>
+    <span class="section-desc">Bob's private key</span>
+  </div>
+  <div style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:1rem">
+    Formula: <span style="color:var(--accent2)">M = C<sup>d</sup> mod n</span>
+    <span class="pill pill-priv">uses private key</span>
+  </div>
+  <button class="btn btn-secondary" onclick="decrypt()">Decrypt →</button>
+</div>
+
+<!-- Decryption Process -->
+<div class="section hidden fade-up" id="sec-decresult">
+  <div class="section-header">
+    <div class="step-badge done">✓</div>
+    <span class="section-title">Decryption process</span>
+    <span class="section-desc">M = C<sup>d</sup> mod n</span>
+  </div>
+
+  <!-- Flow summary -->
+  <div class="flow-diagram" id="dec-flow"></div>
+
+  <div class="divider"><span>Step-by-step</span></div>
+
+  <div class="proc-table-wrap">
+    <table class="proc-table">
+      <thead>
+        <tr>
+          <th>Ciphertext (C)</th>
+          <th style="text-align:center">→</th>
+          <th>Formula</th>
+          <th style="text-align:center">→</th>
+          <th>ASCII (M)</th>
+          <th style="text-align:center">→</th>
+          <th>Char</th>
+        </tr>
+      </thead>
+      <tbody id="dec-tbody"></tbody>
+    </table>
+  </div>
+
+  <div id="verify-box"></div>
+</div>
+
+</div>
+
+<script>
+let RSA = {};
+
+function isPrime(n){if(n<2)return false;for(let i=2;i<=Math.sqrt(n);i++)if(n%i===0)return false;return true}
+function gcd(a,b){while(b){[a,b]=[b,a%b]}return a}
+function modInverse(e,phi){for(let d=1;d<phi;d++)if((d*e)%phi===1)return d;return null}
+function modPow(base,exp,mod){let r=1n;base=BigInt(base)%BigInt(mod);exp=BigInt(exp);mod=BigInt(mod);while(exp>0n){if(exp%2n===1n)r=(r*base)%mod;exp=exp/2n;base=(base*base)%mod}return Number(r)}
+
+function show(id){const el=document.getElementById(id);el.classList.remove('hidden');void el.offsetWidth;el.classList.add('fade-up')}
+
+function resetAll(){
+  ['sec-keyresult','sec-enc','sec-encresult','sec-dec','sec-decresult'].forEach(id=>{
+    const el=document.getElementById(id);el.classList.add('hidden');el.classList.remove('fade-up')
+  });
+  document.getElementById('inp-p').value='';
+  document.getElementById('inp-q').value='';
+  document.getElementById('inp-p').className='';
+  document.getElementById('inp-q').className='';
+  document.getElementById('inp-msg').value='';
+  document.getElementById('err-p').classList.remove('show');
+  document.getElementById('err-q').classList.remove('show');
+  document.getElementById('sec-keygen').classList.add('active');
+  document.getElementById('sec-keygen').classList.remove('done');
+  RSA={};
+}
+
+function generateKeys(){
+  const pVal=parseInt(document.getElementById('inp-p').value);
+  const qVal=parseInt(document.getElementById('inp-q').value);
+  let valid=true;
+  if(!isPrime(pVal)){document.getElementById('inp-p').className='error';document.getElementById('err-p').classList.add('show');valid=false}
+  else{document.getElementById('inp-p').className='ok';document.getElementById('err-p').classList.remove('show')}
+  if(!isPrime(qVal)||qVal===pVal){document.getElementById('inp-q').className='error';document.getElementById('err-q').classList.add('show');valid=false}
+  else{document.getElementById('inp-q').className='ok';document.getElementById('err-q').classList.remove('show')}
+  if(!valid)return;
+
+  const p=pVal,q=qVal,n=p*q,phi=(p-1)*(q-1);
+  let e=2;while(e<phi){if(gcd(e,phi)===1)break;e++}
+  const d=modInverse(e,phi);
+  RSA={p,q,n,phi,e,d};
+
+  document.getElementById('key-steps').innerHTML=[
+    ['n = p × q',`${p} × ${q}`,n],
+    ['φ(n) = (p−1)(q−1)',`${p-1} × ${q-1}`,phi],
+    ['e : gcd(e, φ) = 1','smallest valid e',e],
+    ['d · e ≡ 1 (mod φ)','modular inverse of e',d],
+  ].map(([l,s,v])=>`<tr><td class="lbl">${l}</td><td class="eq">=</td><td class="sub">${s}</td><td class="eq">=</td><td class="val">${v}</td></tr>`).join('');
+
+  document.getElementById('pub-key').textContent=`(${e}, ${n})`;
+  document.getElementById('priv-key').textContent=`(${d}, ${n})`;
+  document.getElementById('sec-keygen').classList.remove('active');
+  document.getElementById('sec-keygen').classList.add('done');
+  show('sec-keyresult');
+  setTimeout(()=>show('sec-enc'),200);
+}
+
+function encrypt(){
+  const msg=document.getElementById('inp-msg').value.trim();
+  if(!msg){document.getElementById('inp-msg').style.borderColor='var(--danger)';return}
+  document.getElementById('inp-msg').style.borderColor='';
+  const {e,n}=RSA;
+  RSA.encrypted=[];
+  RSA.message=msg;
+
+  // Flow diagram
+  document.getElementById('enc-flow').innerHTML=`
+    <div class="flow-node"><div class="fn-label">Plaintext</div><div class="fn-val" style="color:var(--accent2)">${msg.length>12?msg.slice(0,12)+'…':msg}</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node key-pub"><div class="fn-label">Public key</div><div class="fn-val">(e=${e}, n=${n})</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node enc"><div class="fn-label">C = Mᵉ mod n</div><div class="fn-val" style="color:var(--accent3)">Ciphertext</div></div>`;
+
+  const tbody=document.getElementById('enc-tbody');
+  tbody.innerHTML='';
+  msg.split('').forEach((ch,i)=>{
+    const m=ch.charCodeAt(0);
+    const c=modPow(m,e,n);
+    RSA.encrypted.push(c);
+    const tr=document.createElement('tr');
+    tr.style.animationDelay=(i*0.06)+'s';
+    tr.innerHTML=`
+      <td><span class="ch-bubble">${ch===' '?'␣':ch}</span></td>
+      <td class="num-val">${m}</td>
+      <td class="arrow-cell">→</td>
+      <td class="formula-cell">${m}<sup>${e}</sup> mod ${n}</td>
+      <td class="arrow-cell">→</td>
+      <td class="enc-result result-val">${c}</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('enc-raw').textContent='['+RSA.encrypted.join(', ')+']';
+  show('sec-encresult');
+  setTimeout(()=>show('sec-dec'),200);
+}
+
+function decrypt(){
+  const {d,n,encrypted,message}=RSA;
+  let decrypted='';
+
+  // Flow diagram
+  document.getElementById('dec-flow').innerHTML=`
+    <div class="flow-node enc"><div class="fn-label">Ciphertext</div><div class="fn-val" style="color:var(--accent3)">[${encrypted.slice(0,3).join(', ')}${encrypted.length>3?'…':''  }]</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node key-priv"><div class="fn-label">Private key</div><div class="fn-val">(d=${d}, n=${n})</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node dec"><div class="fn-label">M = Cᵈ mod n</div><div class="fn-val" style="color:var(--accent2)">Plaintext</div></div>`;
+
+  const tbody=document.getElementById('dec-tbody');
+  tbody.innerHTML='';
+  encrypted.forEach((c,i)=>{
+    const m=modPow(c,d,n);
+    const ch=String.fromCharCode(m);
+    decrypted+=ch;
+    const tr=document.createElement('tr');
+    tr.style.animationDelay=(i*0.06)+'s';
+    tr.innerHTML=`
+      <td class="cipher-val" style="font-family:var(--mono);font-weight:700">${c}</td>
+      <td class="arrow-cell">→</td>
+      <td class="formula-cell">${c}<sup>${d}</sup> mod ${n}</td>
+      <td class="arrow-cell">→</td>
+      <td class="num-val">${m}</td>
+      <td class="arrow-cell">→</td>
+      <td><span class="ch-bubble">${ch===' '?'␣':ch}</span></td>`;
+    tbody.appendChild(tr);
+  });
+
+  const match=decrypted===message;
+  document.getElementById('verify-box').innerHTML=`
+    <div class="verify-box ${match?'ok':'fail'}">
+      <div class="verify-label">${match?'✓ Verification passed':'✗ Verification failed'}</div>
+      <div class="verify-text">${decrypted}</div>
+      ${match?`<div style="font-size:12px;color:var(--muted);font-family:var(--mono);margin-top:6px">Decrypted message matches original plaintext</div>`:''}
+    </div>`;
+  show('sec-decresult');
+}
+</script>
+</body>
+</html>
